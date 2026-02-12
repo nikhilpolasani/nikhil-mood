@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Nikhil's Mood</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    height: 100vh;
+    font-family: "Segoe UI", sans-serif;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(to bottom, #c7d2fe, #e0f2fe, #fefce8);
+}
+
+/* 🌙 Night palette */
+body.night {
+    background: linear-gradient(to bottom, #020617, #0f172a, #1e293b);
+}
+
+/* ================= BACKGROUND SCENE ================= */
+
+.scene {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.5;
+    filter: blur(10px);
+    animation: drift linear infinite;
+}
+
+@keyframes drift {
+    from {
+        transform: translateY(110vh) translateX(0) rotate(0deg);
+    }
+    to {
+        transform: translateY(-120vh) translateX(120px) rotate(360deg);
+    }
+}
+
+/* Depth illusion */
+.depth1 { animation-duration: 160s; }
+.depth2 { animation-duration: 220s; opacity: 0.35; }
+.depth3 { animation-duration: 300s; opacity: 0.25; }
+
+/* ================= CARD ================= */
+
+.card {
+    position: relative;
+    z-index: 2;
+    width: 390px;
+    padding: 36px 40px;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.15);
+}
+
+/* Title */
+.mood-title {
+    font-size: 26px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Mood circle */
+.circle {
+    width: 230px;
+    height: 230px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.6s ease, transform 0.4s ease;
+}
+
+.circle:hover {
+    transform: scale(1.05);
+}
+
+/* Mood icon */
+.mood-icon {
+    font-size: 36px;
+    margin-bottom: 6px;
+}
+
+/* Mood name */
+.mood-name {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Timestamp */
+.timestamp {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #6b7280;
+    text-align: center;
+}
+
+/* Reason */
+.reason-box {
+    margin-top: 22px;
+}
+
+.reason-box h3 {
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+
+textarea {
+    width: 100%;
+    resize: none;
+    padding: 12px;
+    font-size: 14px;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+}
+
+textarea:disabled {
+    background: #f3f4f6;
+}
+
+/* Controls */
+.controls {
+    margin-top: 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+button {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 13px;
+    background: #eef2ff;
+}
+
+button:hover {
+    background: #e0e7ff;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🔐 Change to false before sharing -->
+<script>
+const OWNER_MODE = true;
+</script>
+
+<!-- 🌌 Moving background -->
+<div class="scene" id="scene"></div>
+
+<div class="card">
+    <div class="mood-title">Nikhil's current mood</div>
+
+    <div id="moodCircle" class="circle">
+        <div class="mood-icon">🌤️</div>
+        <div class="mood-name">—</div>
+    </div>
+
+    <div id="timeStamp" class="timestamp">Last updated: —</div>
+
+    <div class="reason-box">
+        <h3>Reason</h3>
+        <textarea id="reasonInput" rows="3"></textarea>
+    </div>
+
+    <div id="controls" class="controls">
+        <button onclick="setMood('Happy')">Happy</button>
+        <button onclick="setMood('Sad')">Sad</button>
+        <button onclick="setMood('Angry')">Angry</button>
+        <button onclick="setMood('Angry + Sad')">Angry + Sad</button>
+        <button onclick="setMood('Confused')">Confused</button>
+        <button onclick="setMood('Depressed')">Depressed</button>
+        <button onclick="setMood('Solitude')">Solitude</button>
+        <button onclick="setMood('Dazed / Dizzy')">Dazed / Dizzy</button>
+    </div>
+</div>
+
+<script>
+/* 🌙 Auto night mode */
+const hour = new Date().getHours();
+if (hour >= 19 || hour <= 5) document.body.classList.add("night");
+
+/* 🌌 Create floating shapes */
+const scene = document.getElementById("scene");
+for (let i = 0; i < 20; i++) {
+    const s = document.createElement("div");
+    s.className = `shape depth${(i % 3) + 1}`;
+    s.style.width = s.style.height = `${Math.random() * 200 + 120}px`;
+    s.style.left = `${Math.random() * 100}%`;
+    s.style.background = `rgba(${180 + Math.random()*40}, ${200 + Math.random()*40}, 255, 1)`;
+    s.style.animationDelay = `${Math.random() * -300}s`;
+    scene.appendChild(s);
+}
+
+/* 🎭 Mood definitions */
+const moods = {
+    "Happy": { color: "#87CEEB", icon: "😊" },
+    "Sad": { color: "#FFB74D", icon: "😔" },
+    "Angry": { color: "#FF3B3B", icon: "😡" },
+    "Angry + Sad": { color: "#6EE7B7", icon: "💚" },
+    "Confused": { color: "#D3D3D3", icon: "😕" },
+    "Depressed": { color: "#C3A6E8", icon: "🌧️" },
+    "Solitude": { color: "#C2A17A", icon: "🌿" },
+    "Dazed / Dizzy": { color: "#F8A8C8", icon: "💫" }
+};
+
+const circle = document.getElementById("moodCircle");
+const iconEl = circle.querySelector(".mood-icon");
+const nameEl = circle.querySelector(".mood-name");
+const reasonInput = document.getElementById("reasonInput");
+const timeStamp = document.getElementById("timeStamp");
+const controls = document.getElementById("controls");
+
+/* Load saved */
+const savedMood = localStorage.getItem("mood");
+const savedReason = localStorage.getItem("reason");
+const savedTime = localStorage.getItem("time");
+
+if (savedMood) {
+    iconEl.textContent = moods[savedMood].icon;
+    nameEl.textContent = savedMood;
+    circle.style.backgroundColor = moods[savedMood].color;
+}
+if (savedReason) reasonInput.value = savedReason;
+if (savedTime) timeStamp.textContent = savedTime;
+
+/* Viewer lock */
+if (!OWNER_MODE) {
+    controls.style.display = "none";
+    reasonInput.disabled = true;
+}
+
+/* Save reason */
+reasonInput.addEventListener("input", () => {
+    if (OWNER_MODE) localStorage.setItem("reason", reasonInput.value);
+});
+
+function setMood(mood) {
+    if (!OWNER_MODE) return;
+
+    iconEl.textContent = moods[mood].icon;
+    nameEl.textContent = mood;
+    circle.style.backgroundColor = moods[mood].color;
+
+    const now = new Date();
+    const formatted = now.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    const timeText = `Last updated: ${formatted}`;
+    timeStamp.textContent = timeText;
+
+    localStorage.setItem("mood", mood);
+    localStorage.setItem("time", timeText);
+}
+</script>
+
+</body>
+</html>
